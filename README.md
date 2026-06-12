@@ -6,7 +6,7 @@ Run locally:
 
 ```
 npm install
-npm run dev
+npm run dev --host
 ```
 
 Build:
