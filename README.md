@@ -16,6 +16,8 @@ npm run build
 npm run preview
 ```
 
+Deploy on Render as a web service using `npm run build` then `npm start`.
+
 The project exposes a serverless route at `/api/status` which responds to HEAD and GET.
 # Website
 Useful website

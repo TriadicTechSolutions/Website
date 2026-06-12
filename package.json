@@ -1,13 +1,16 @@
 {
   "name": "price-tracker-dashboard",
   "version": "1.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
+    "express": "^4.18.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.6.2"
