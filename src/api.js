@@ -12,7 +12,7 @@ const CACHE_TTLS = {
   MAX: 1000 * 60 * 30,
 };
 const SEARCH_CACHE_TTL = 1000 * 60;
-const MAX_CONCURRENT_REQUESTS = 3;
+const MAX_CONCURRENT_REQUESTS = 6; // Keep mixed asset types flowing while server-side CoinGecko throttling protects the upstream API.
 const MAX_RETRIES = 1;
 
 const memoryCache = new Map();
