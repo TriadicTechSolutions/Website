@@ -42,6 +42,7 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, forceRefre
       setData((d) => ({ ...d, loading: true, error: null, series: [] }));
       if (item.category === "Crypto") {
         const res = await fetchCrypto(item.id, null, null, rangeKey, forceRefresh);
+        if (cancelled || version !== loadVersion.current) return;
         const prices = (res.prices || [])
           .map((p) => ({ t: p[0], v: p[1] }))
           .filter((entry) => entry.t && typeof entry.v === 'number')
@@ -57,7 +58,7 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, forceRefre
           error: null,
         });
       } else if (item.category === "Stock") {
-        const res = await fetchStock(item.id, rangeKey);
+        const res = await fetchStock(item.id, rangeKey, forceRefresh);
         if (cancelled || version !== loadVersion.current) return;
         const chart = res.chart && res.chart.result && res.chart.result[0];
         const meta = chart?.meta || {};
@@ -225,7 +226,7 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, forceRefre
             className="text-slate-400 hover:text-white disabled:opacity-40"
             title="Force refresh this card"
           >
-            ↻
+            {data.loading ? "…" : "↻"}
           </button>
           <button
             onClick={() => onRemove(item)}
