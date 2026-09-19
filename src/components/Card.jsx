@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { LineChart, Line, ResponsiveContainer, ReferenceLine, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import { fetchCrypto, fetchStock } from "../api";
 
@@ -23,13 +23,14 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHand
   const [takeProfit, setTakeProfit] = useState(null);
   const [alertStop, setAlertStop] = useState(false);
   const [alertProfit, setAlertProfit] = useState(false);
+  const loadVersion = useRef(0);
 
   useEffect(() => {
-    load();
-  }, [item.id, rangeKey, refreshTick]);
+    const version = ++loadVersion.current;
+    let cancelled = false;
 
-  async function load() {
-    try {
+    async function runLoad() {
+      try {
       setData((d) => ({ ...d, loading: true, error: null, series: [] }));
       if (item.category === "Crypto") {
         const res = await fetchCrypto(item.id, null, null, rangeKey);
@@ -48,7 +49,7 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHand
           error: null,
         });
       } else if (item.category === "Stock") {
-        const res = await fetchStock(item.id, rangeKey);
+        const res = await fetchStock(item.id, rangeKey);\n        if (cancelled || version !== loadVersion.current) return;
         const chart = res.chart && res.chart.result && res.chart.result[0];
         const meta = chart?.meta || {};
         const closes = chart?.indicators?.quote?.[0]?.close || [];
@@ -94,9 +95,15 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHand
         });
       }
     } catch (e) {
-      setData((d) => ({ ...d, loading: false, error: "Failed to load", series: [] }));
+      if (cancelled || version !== loadVersion.current) return;
+      console.error("Price card load failed", item.id, rangeKey, e);
+      setData((d) => ({ ...d, loading: false, error: e?.message || "Failed to load" }));
     }
-  }
+    }
+
+    runLoad();
+    return () => { cancelled = true; };
+  }, [item.id, item.category, item.price, rangeKey, refreshTick]);
 
   
 
