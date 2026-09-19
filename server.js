@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url'
 import statusHandler from './api/status.js'
 import yahooHandler from './api/yahoo.js'
 import coingeckoHandler from './api/coingecko.js'
+import coincapHandler from './api/coincap.js'
+import binanceHandler from './api/binance.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -16,6 +18,10 @@ app.get('/api/status', statusHandler)
 app.get('/api/yahoo', yahooHandler)
 app.get('/api/coingecko/*', coingeckoHandler)
 app.get('/api/coingecko', coingeckoHandler)
+app.get('/api/coincap/*', coincapHandler)
+app.get('/api/coincap', coincapHandler)
+app.get('/api/binance/*', binanceHandler)
+app.get('/api/binance', binanceHandler)
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'))
