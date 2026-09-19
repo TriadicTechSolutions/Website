@@ -10,7 +10,7 @@ function Arrow({ up }) {
   );
 }
 
-export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHandleStart, onDragEnter, onDrop, onDragEnd, isDragging, isDragOver }) {
+export default function Card({ item, rangeKey, onRemove, refreshTick, forceRefreshAllToken, onDragHandleStart, onDragEnter, onDrop, onDragEnd, isDragging, isDragOver }) {
   const [data, setData] = useState({
     price: null,
     prevPrice: null,
@@ -24,16 +24,24 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHand
   const [alertStop, setAlertStop] = useState(false);
   const [alertProfit, setAlertProfit] = useState(false);
   const loadVersion = useRef(0);
+  const lastForceRefreshAllToken = useRef(forceRefreshAllToken);
+  const [manualRefreshToken, setManualRefreshToken] = useState(0);
+  const lastManualRefreshToken = useRef(0);
 
   useEffect(() => {
     const version = ++loadVersion.current;
     let cancelled = false;
+    const forceRefresh =
+      forceRefreshAllToken !== lastForceRefreshAllToken.current ||
+      manualRefreshToken !== lastManualRefreshToken.current;
+    lastForceRefreshAllToken.current = forceRefreshAllToken;
+    lastManualRefreshToken.current = manualRefreshToken;
 
     async function runLoad() {
       try {
       setData((d) => ({ ...d, loading: true, error: null, series: [] }));
       if (item.category === "Crypto") {
-        const res = await fetchCrypto(item.id, null, null, rangeKey);
+        const res = await fetchCrypto(item.id, null, null, rangeKey, forceRefresh);
         const prices = (res.prices || [])
           .map((p) => ({ t: p[0], v: p[1] }))
           .filter((entry) => entry.t && typeof entry.v === 'number')
@@ -104,7 +112,7 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHand
 
     runLoad();
     return () => { cancelled = true; };
-  }, [item.id, item.category, item.price, rangeKey, refreshTick]);
+  }, [item.id, item.category, item.price, rangeKey, refreshTick, forceRefreshAllToken, manualRefreshToken]);
 
   
 
@@ -210,6 +218,15 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHand
           >
             ≡
           </div>
+          <button
+            type="button"
+            onClick={() => setManualRefreshToken((n) => n + 1)}
+            disabled={data.loading}
+            className="text-slate-400 hover:text-white disabled:opacity-40"
+            title="Force refresh this card"
+          >
+            ↻
+          </button>
           <button
             onClick={() => onRemove(item)}
             className="text-slate-400 hover:text-white"
