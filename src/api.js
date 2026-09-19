@@ -12,7 +12,7 @@ const CACHE_TTLS = {
   MAX: 1000 * 60 * 30,
 };
 const SEARCH_CACHE_TTL = 1000 * 60;
-const MAX_CONCURRENT_REQUESTS = 3;
+const MAX_CONCURRENT_REQUESTS = 6;
 const MAX_RETRIES = 1;
 
 const memoryCache = new Map();
@@ -291,7 +291,7 @@ async function fetchCoinCapHistory(id, rangeKey) {
   };
 }
 
-async function fetchBinanceKlines(id, rangeKey) {
+async function fetchBinanceKlines(id, rangeKey, forceRefresh = false) {
   const symbol = mapBinanceSymbol(id);
   if (!symbol) {
     throw new Error("Binance symbol missing for " + id);
@@ -306,7 +306,8 @@ async function fetchBinanceKlines(id, rangeKey) {
     "&interval=" +
     encodeURIComponent(interval) +
     "&limit=" +
-    limit;
+    limit +
+    (forceRefresh ? "&force=1" : "");
 
   const body = await requestJson(url);
 
@@ -346,6 +347,26 @@ async function fetchBinancePrice(id) {
   return { prices: [[Date.now(), price]] };
 }
 
+async function fetchFastCryptoChart(id, rangeKey, forceRefresh = false) {
+  // Manual refreshes use the faster market-data sources first so CoinGecko's
+  // conservative upstream throttle does not make the entire dashboard wait.
+  if (rangeKey !== "MAX") {
+    try {
+      return await fetchBinanceKlines(id, rangeKey, forceRefresh);
+    } catch (error) {
+      console.error("Fast Binance crypto refresh failed", error.message);
+
+      try {
+        return await fetchCoinCapHistory(id, rangeKey);
+      } catch (coinCapError) {
+        console.error("Fast CoinCap crypto refresh failed", coinCapError.message);
+      }
+    }
+  }
+
+  return fetchCoinGeckoChart(id, rangeKey, forceRefresh);
+}
+
 export async function fetchCrypto(id, rangeSecStart, rangeSecEnd, rangeKey, forceRefresh = false) {
   const cacheKey = "crypto-chart:" + id + ":" + rangeKey;
   const ttl = CACHE_TTLS[rangeKey] ?? CACHE_TTLS["24H"];
@@ -359,7 +380,10 @@ export async function fetchCrypto(id, rangeSecStart, rangeSecEnd, rangeKey, forc
   };
 
   try {
-    return saveData(await fetchCoinGeckoChart(id, rangeKey, forceRefresh));
+    const primary = forceRefresh
+      ? await fetchFastCryptoChart(id, rangeKey, forceRefresh)
+      : await fetchCoinGeckoChart(id, rangeKey, false);
+    return saveData(primary);
   } catch (primaryError) {
     console.error("CoinGecko fetch failed", primaryError.message);
 

@@ -9,11 +9,13 @@ export default async function handler(req, res) {
 
   try {
     const incoming = new URL(req.url, 'http://localhost')
+    const force = incoming.searchParams.get('force') === '1'
+    incoming.searchParams.delete('force')
     const path = incoming.pathname.replace('/api/coincap', '')
     const target = 'https://api.coincap.io/v2' + path + incoming.search
     const cached = cache.get(target)
 
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    if (!force && cached && Date.now() - cached.ts < CACHE_TTL) {
       res.setHeader('Content-Type', 'application/json')
       res.setHeader('X-Price-Cache', 'HIT')
       res.setHeader('Cache-Control', 'public, max-age=30')

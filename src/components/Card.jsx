@@ -39,7 +39,7 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, forceRefre
 
     async function runLoad() {
       try {
-      setData((d) => ({ ...d, loading: true, error: null, series: [] }));
+      setData((d) => ({ ...d, loading: true, error: null }));
       if (item.category === "Crypto") {
         const res = await fetchCrypto(item.id, null, null, rangeKey, forceRefresh);
         if (cancelled || version !== loadVersion.current) return;
