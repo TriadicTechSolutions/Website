@@ -419,7 +419,7 @@ export async function fetchStock(ticker, rangeKey, forceRefresh = false) {
   const ttl = CACHE_TTLS[rangeKey] ?? CACHE_TTLS["24H"];
   const { fresh: cached, stale } = getCachedOrThrow(cacheKey, ttl);
 
-  if (cached) return cached;
+  if (cached && !forceRefresh) return cached;
 
   const url =
     YAHOO_PROXY +
@@ -428,7 +428,8 @@ export async function fetchStock(ticker, rangeKey, forceRefresh = false) {
     "&range=" +
     encodeURIComponent(cfg.range) +
     "&interval=" +
-    encodeURIComponent(cfg.interval);
+    encodeURIComponent(cfg.interval) +
+    (forceRefresh ? "&force=1" : "");
 
   try {
     const body = await requestJson(url);
