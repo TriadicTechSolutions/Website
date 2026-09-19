@@ -90,7 +90,7 @@ function drainQueue() {
 function formatApiError(response, body, url) {
   let detail = "";
   if (body && typeof body === "object") {
-    detail = body.error?.message || body.error?.description || body.message || "";
+    detail = body.error?.message || body.error?.description || body.message || body.details || "";
   } else if (typeof body === "string") {
     detail = body.slice(0, 200);
   }
@@ -390,7 +390,7 @@ export async function searchCrypto(query) {
   const cacheKey = "crypto-search:" + normalized;
   const { fresh: cached } = getCachedOrThrow(cacheKey, SEARCH_CACHE_TTL);
 
-  if (cached && !forceRefresh) return cached;
+  if (cached) return cached;
 
   try {
     const url = COINGECKO_PROXY + "/search?query=" + encodeURIComponent(query);
