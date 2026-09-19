@@ -13,15 +13,36 @@ export default async function handler(req, res) {
         return;
       }
 
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${encodeURIComponent(range)}&interval=${encodeURIComponent(interval)}`;
+      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' +
+        encodeURIComponent(ticker) +
+        '?range=' + encodeURIComponent(range) +
+        '&interval=' + encodeURIComponent(interval);
+
       const response = await fetch(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
           accept: 'application/json, text/plain, */*',
         },
       });
-      const data = await response.json();
+
+      const text = await response.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = { error: { description: text.slice(0, 300) } };
+      }
+
+      if (!response.ok) {
+        res.status(response.status).json({
+          error: 'Yahoo request failed',
+          details: data?.chart?.error?.description || data?.error?.description || 'Unknown Yahoo error',
+        });
+        return;
+      }
+
       res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=30');
       res.status(200).json(data);
       return;
     }
@@ -32,10 +53,28 @@ export default async function handler(req, res) {
         return;
       }
 
-      const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}`;
+      const url = 'https://query1.finance.yahoo.com/v1/finance/search?q=' +
+        encodeURIComponent(q);
+
       const response = await fetch(url);
-      const data = await response.json();
+      const text = await response.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = { quotes: [] };
+      }
+
+      if (!response.ok) {
+        res.status(response.status).json({
+          error: 'Yahoo search failed',
+          details: data?.message || 'Unknown Yahoo error',
+        });
+        return;
+      }
+
       res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=60');
       res.status(200).json(data);
       return;
     }
@@ -43,6 +82,6 @@ export default async function handler(req, res) {
     res.status(400).json({ error: 'Invalid type parameter' });
   } catch (error) {
     console.error('Yahoo proxy error', error);
-    res.status(502).json({ error: 'Unable to fetch Yahoo data' });
+    res.status(502).json({ error: 'Unable to fetch Yahoo data', details: error.message });
   }
 }
