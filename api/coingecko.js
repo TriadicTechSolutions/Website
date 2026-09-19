@@ -41,41 +41,6 @@ function queueUpstream(task) {
   return result
 }
 
-async function fetchUpstream(url) {
-  if (inflight.has(url)) return inflight.get(url)
-
-  const promise = queueUpstream(async () => {
-    let response = await fetch(url, {
-      headers: {
-        accept: 'application/json, text/plain, */*',
-      },
-    })
-
-    if (response.status >= 500) {
-      await sleep(1000)
-      response = await fetch(url, {
-        headers: {
-          accept: 'application/json, text/plain, */*',
-        },
-      })
-    }
-
-    const text = await response.text()
-    let body
-
-    try {
-      body = text ? JSON.parse(text) : null
-    } catch {
-      body = text
-    }
-
-    return { response, body }
-  }).finally(() => inflight.delete(url))
-
-  inflight.set(url, promise)
-  return promise
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' })
