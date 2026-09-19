@@ -49,7 +49,8 @@ export default function Card({ item, rangeKey, onRemove, refreshTick, onDragHand
           error: null,
         });
       } else if (item.category === "Stock") {
-        const res = await fetchStock(item.id, rangeKey);\n        if (cancelled || version !== loadVersion.current) return;
+        const res = await fetchStock(item.id, rangeKey);
+        if (cancelled || version !== loadVersion.current) return;
         const chart = res.chart && res.chart.result && res.chart.result[0];
         const meta = chart?.meta || {};
         const closes = chart?.indicators?.quote?.[0]?.close || [];
