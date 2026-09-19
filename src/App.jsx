@@ -84,6 +84,11 @@ export default function App(){
     setItems(prev=>prev.filter(p=>!(p.id===item.id && p.category===item.category)))
   }
 
+  function handleForceRefreshAll(){
+    setLastUpdatedSeconds(0)
+    setForceRefreshAllToken(n=>n+1)
+  }
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
@@ -94,7 +99,7 @@ export default function App(){
             <button onClick={()=>setModalOpen(true)} className="px-3 py-2 bg-blue-600 rounded">Add</button>
           </div>
         </header>
-        <FilterBar range={range} setRange={setRange} lastUpdated={lastUpdatedSeconds} onForceRefreshAll={()=>setForceRefreshAllToken(n=>n+1)} />
+        <FilterBar range={range} setRange={setRange} lastUpdated={lastUpdatedSeconds} onForceRefreshAll={handleForceRefreshAll} />
 
         <main>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
