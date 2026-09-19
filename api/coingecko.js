@@ -91,7 +91,16 @@ export default async function handler(req, res) {
     const cleanQuery = url.search
     const key = cacheKey(path, cleanQuery)
     const isSearch = path === '/search'
-    const ttl = isSearch ? SEARCH_CACHE_TTL : CACHE_TTL
+    const days = url.searchParams.get('days')
+    const ttl = isSearch
+      ? SEARCH_CACHE_TTL
+      : days === '1'
+      ? 60_000
+      : days === '7'
+      ? 5 * 60_000
+      : days === '30'
+      ? 10 * 60_000
+      : 30 * 60_000
 
     if (!force) {
       const cached = getCache(key)
