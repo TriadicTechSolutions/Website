@@ -24,6 +24,7 @@ export default function App(){
   // track last-updated seconds and a refresh tick every 60s
   const [lastUpdatedSeconds, setLastUpdatedSeconds] = useState(0)
   const [refreshTick, setRefreshTick] = useState(0)
+  const [forceRefreshAllToken, setForceRefreshAllToken] = useState(0)
   const [draggedItem, setDraggedItem] = useState(null)
   const [dragOverKey, setDragOverKey] = useState(null)
 
@@ -77,7 +78,7 @@ export default function App(){
   }, [])
 
   function handleAdd(item){
-    setItems(prev=>[...prev, item])
+    setItems(prev=>prev.some(p=>p.id===item.id && p.category===item.category) ? prev : [...prev, item])
   }
   function handleRemove(item){
     setItems(prev=>prev.filter(p=>!(p.id===item.id && p.category===item.category)))
@@ -88,11 +89,12 @@ export default function App(){
       <div className="max-w-7xl mx-auto">
         <header className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Price Tracker Dashboard</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button onClick={()=>setForceRefreshAllToken(n=>n+1)} className="px-3 py-2 bg-white/10 hover:bg-white/15 rounded text-sm">↻ Force refresh all</button>
             <button onClick={()=>setModalOpen(true)} className="px-3 py-2 bg-blue-600 rounded">Add</button>
           </div>
         </header>
-        <FilterBar range={range} setRange={setRange} lastUpdated={lastUpdatedSeconds} />
+        <FilterBar range={range} setRange={setRange} lastUpdated={lastUpdatedSeconds} onForceRefreshAll={()=>setForceRefreshAllToken(n=>n+1)} />
 
         <main>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -103,6 +105,7 @@ export default function App(){
                 rangeKey={range}
                 onRemove={handleRemove}
                 refreshTick={refreshTick}
+                forceRefreshAllToken={forceRefreshAllToken}
                 onDragHandleStart={() => handleDragStart(it)}
                 onDragEnter={(e) => handleDragEnter(e, it)}
                 onDrop={handleDrop}
