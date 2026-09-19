@@ -224,14 +224,14 @@ function mapBinanceSymbol(id) {
   return map[id] || null;
 }
 
-async function fetchCoinGeckoChart(id, rangeKey) {
+async function fetchCoinGeckoChart(id, rangeKey, forceRefresh = false) {
   const days = rangeKey === "1H" ? 1 : mapDays(rangeKey);
   const url =
     COINGECKO_PROXY +
     "/coins/" +
     encodeURIComponent(id) +
     "/market_chart?vs_currency=usd&days=" +
-    encodeURIComponent(days);
+    encodeURIComponent(days) + (forceRefresh ? "&force=1" : "");
 
   const body = await requestJson(url);
 
@@ -346,12 +346,12 @@ async function fetchBinancePrice(id) {
   return { prices: [[Date.now(), price]] };
 }
 
-export async function fetchCrypto(id, rangeSecStart, rangeSecEnd, rangeKey) {
+export async function fetchCrypto(id, rangeSecStart, rangeSecEnd, rangeKey, forceRefresh = false) {
   const cacheKey = "crypto-chart:" + id + ":" + rangeKey;
   const ttl = CACHE_TTLS[rangeKey] ?? CACHE_TTLS["24H"];
   const { fresh: cached, stale } = getCachedOrThrow(cacheKey, ttl);
 
-  if (cached) return cached;
+  if (cached && !forceRefresh) return cached;
 
   const saveData = (data) => {
     saveCache(cacheKey, data);
@@ -359,7 +359,7 @@ export async function fetchCrypto(id, rangeSecStart, rangeSecEnd, rangeKey) {
   };
 
   try {
-    return saveData(await fetchCoinGeckoChart(id, rangeKey));
+    return saveData(await fetchCoinGeckoChart(id, rangeKey, forceRefresh));
   } catch (primaryError) {
     console.error("CoinGecko fetch failed", primaryError.message);
 
@@ -390,7 +390,7 @@ export async function searchCrypto(query) {
   const cacheKey = "crypto-search:" + normalized;
   const { fresh: cached } = getCachedOrThrow(cacheKey, SEARCH_CACHE_TTL);
 
-  if (cached) return cached;
+  if (cached && !forceRefresh) return cached;
 
   try {
     const url = COINGECKO_PROXY + "/search?query=" + encodeURIComponent(query);
@@ -404,7 +404,7 @@ export async function searchCrypto(query) {
   }
 }
 
-export async function fetchStock(ticker, rangeKey) {
+export async function fetchStock(ticker, rangeKey, forceRefresh = false) {
   const map = {
     "1H": { range: "1d", interval: "1m" },
     "24H": { range: "1d", interval: "5m" },
